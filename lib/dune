@@ -1,0 +1,4 @@
+(library
+ (public_name automata)
+ (name automata)
+ (modules_without_implementation sig))

@@ -5,20 +5,28 @@ module type Comparable = sig
   val compare : t -> t -> int
 end
 
-
 (** Signature of the module obtained from Fsa.Make *)
 module type F = sig
-    type alphabet
-    type state
-  
-    type t
-    (** type of FSA *)
-  
-    val create :
-      alphabet:alphabet list ->
-      states:state list ->
-      start:state ->
-      accepting:state list ->
-      transitions:(state -> alphabet -> state) ->
-      (t, string) Result.t
-  end
+  type letter
+  type state
+
+  type t
+  (** type of FSA *)
+
+  exception Invalid_DFA of string
+  exception Invalid_letter
+  exception Invalid_state
+
+  val create_exn :
+    alphabet:letter list ->
+    states:state list ->
+    start:state ->
+    accepting:state list ->
+    transitions:(state -> letter -> state) ->
+    t
+
+  val step : t -> ?start:state -> letter list -> state
+  val accept : t -> letter list -> bool
+  val state_product : t -> t -> (state * state) list
+  val negate : t -> t
+end

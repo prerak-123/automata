@@ -25,8 +25,14 @@ module type F = sig
     transitions:(state -> letter -> state) ->
     t
 
+  val alphabet_list : t -> letter list
+  val state_list : t -> state list
+  val start : t -> state
+  val accepting_list : t -> state list
+  val transitions : t -> state -> letter -> state
   val step : t -> ?start:state -> letter list -> state
   val accept : t -> letter list -> bool
-  val state_product : t -> t -> (state * state) list
   val negate : t -> t
+  val letter_compare : letter -> letter -> int
+  val state_compare : state -> state -> int
 end

@@ -2,6 +2,9 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
   type letter = Letter.t
   type state = State.t
 
+  let state_compare = State.compare
+  let letter_compare = Letter.compare
+
   exception Invalid_DFA of string
   exception Invalid_letter
   exception Invalid_state
@@ -40,6 +43,12 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
 
   (* Implementation of interface *)
 
+  let alphabet_list { alphabet; _ } = Alphabet_set.to_list alphabet
+  let state_list { states; _ } = State_set.to_list states
+  let start { start; _ } = start
+  let accepting_list { accepting; _ } = State_set.to_list accepting
+  let transitions { transitions; _ } = transitions
+
   let create_exn ~alphabet ~states ~start ~accepting ~transitions =
     let dfa =
       {
@@ -75,12 +84,6 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
   let accept dfa word =
     let final = step_aux dfa dfa.start word in
     Option.is_some (State_set.find_opt final dfa.accepting)
-
-  let state_product dfa1 dfa2 =
-    let aux_add_pairs state1 curr =
-      State_set.fold (fun state2 l -> (state1, state2) :: l) dfa2.states curr
-    in
-    State_set.fold (fun state1 l -> aux_add_pairs state1 l) dfa1.states []
 
   let negate dfa =
     { dfa with accepting = State_set.diff dfa.states dfa.accepting }

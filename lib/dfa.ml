@@ -41,6 +41,16 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
     | [] -> curr
     | hd :: tail -> step_aux dfa (dfa.transitions curr hd) tail
 
+  let rec reach_aux visited curr transitions alphabet_list =
+    let new_visited = State_set.add curr visited in
+    List.fold_left
+      (fun v a ->
+        let next_state = transitions curr a in
+        match State_set.find_opt next_state new_visited with
+        | Some _ -> v
+        | None -> reach_aux v next_state transitions alphabet_list)
+      new_visited alphabet_list
+
   (* Implementation of interface *)
 
   let alphabet_list { alphabet; _ } = Alphabet_set.to_list alphabet
@@ -81,10 +91,14 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
     in
     step_aux dfa start word
 
-  let accept dfa word =
+  let accepts dfa word =
     let final = step_aux dfa dfa.start word in
     Option.is_some (State_set.find_opt final dfa.accepting)
 
   let negate dfa =
     { dfa with accepting = State_set.diff dfa.states dfa.accepting }
+
+  let reachable dfa =
+    State_set.to_list
+      (reach_aux State_set.empty dfa.start dfa.transitions (alphabet_list dfa))
 end

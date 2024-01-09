@@ -31,8 +31,9 @@ module type F = sig
   val accepting_list : t -> state list
   val transitions : t -> state -> letter -> state
   val step : t -> ?start:state -> letter list -> state
-  val accept : t -> letter list -> bool
+  val accepts : t -> letter list -> bool
   val negate : t -> t
+  val reachable : t -> state list
   val letter_compare : letter -> letter -> int
   val state_compare : state -> state -> int
 end

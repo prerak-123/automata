@@ -1,4 +1,4 @@
-module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
+module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
   type letter = Letter.t
   type state = State.t
 
@@ -9,32 +9,32 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
   exception Invalid_letter
   exception Invalid_state
 
-  module Alphabet_set = Set.Make (Letter)
-  module State_set = Set.Make (State)
+  module AlphabetSet = Set.Make (Letter)
+  module StateSet = Set.Make (State)
 
   type t = {
-    states : State_set.t;
-    alphabet : Alphabet_set.t;
+    states : StateSet.t;
+    alphabet : AlphabetSet.t;
     start : state;
-    accepting : State_set.t;
+    accepting : StateSet.t;
     transitions : state -> letter -> state;
   }
 
   (* Auxilary Functions *)
 
   let check_states { states; start; accepting; _ } =
-    match State_set.find_opt start states with
+    match StateSet.find_opt start states with
     | None -> false
-    | Some _ -> State_set.subset accepting states
+    | Some _ -> StateSet.subset accepting states
 
   let check_transitions { states; alphabet; transitions; _ } =
     let check_transitions_of_state state =
-      Alphabet_set.for_all
+      AlphabetSet.for_all
         (fun a ->
-          Option.is_some (State_set.find_opt (transitions state a) states))
+          Option.is_some (StateSet.find_opt (transitions state a) states))
         alphabet
     in
-    State_set.for_all check_transitions_of_state states
+    StateSet.for_all check_transitions_of_state states
 
   let rec step_aux dfa curr word =
     match word with
@@ -42,35 +42,35 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
     | hd :: tail -> step_aux dfa (dfa.transitions curr hd) tail
 
   let rec reach_aux visited curr transitions alphabet_list =
-    let new_visited = State_set.add curr visited in
+    let new_visited = StateSet.add curr visited in
     List.fold_left
       (fun v a ->
         let next_state = transitions curr a in
-        match State_set.find_opt next_state new_visited with
+        match StateSet.find_opt next_state new_visited with
         | Some _ -> v
         | None -> reach_aux v next_state transitions alphabet_list)
       new_visited alphabet_list
 
   (* Implementation of interface *)
 
-  let alphabet_list { alphabet; _ } = Alphabet_set.to_list alphabet
-  let state_list { states; _ } = State_set.to_list states
+  let alphabet_list { alphabet; _ } = AlphabetSet.to_list alphabet
+  let state_list { states; _ } = StateSet.to_list states
   let start { start; _ } = start
-  let accepting_list { accepting; _ } = State_set.to_list accepting
+  let accepting_list { accepting; _ } = StateSet.to_list accepting
   let transitions { transitions; _ } = transitions
 
   let create_exn ~alphabet ~states ~start ~accepting ~transitions =
     let dfa =
       {
-        states = State_set.of_list states;
-        alphabet = Alphabet_set.of_list alphabet;
+        states = StateSet.of_list states;
+        alphabet = AlphabetSet.of_list alphabet;
         start;
-        accepting = State_set.of_list accepting;
+        accepting = StateSet.of_list accepting;
         transitions =
           (fun state letter ->
             if
               Option.is_none
-                (Alphabet_set.find_opt letter (Alphabet_set.of_list alphabet))
+                (AlphabetSet.find_opt letter (AlphabetSet.of_list alphabet))
             then raise Invalid_letter
             else transitions state letter);
       }
@@ -85,7 +85,7 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
       match start with
       | None -> dfa.start
       | Some s ->
-          if Option.is_none (State_set.find_opt s dfa.states) then
+          if Option.is_none (StateSet.find_opt s dfa.states) then
             raise Invalid_state
           else s
     in
@@ -93,12 +93,103 @@ module Make (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
 
   let accepts dfa word =
     let final = step_aux dfa dfa.start word in
-    Option.is_some (State_set.find_opt final dfa.accepting)
+    Option.is_some (StateSet.find_opt final dfa.accepting)
 
   let negate dfa =
-    { dfa with accepting = State_set.diff dfa.states dfa.accepting }
+    { dfa with accepting = StateSet.diff dfa.states dfa.accepting }
 
   let reachable dfa =
-    State_set.to_list
-      (reach_aux State_set.empty dfa.start dfa.transitions (alphabet_list dfa))
+    StateSet.to_list
+      (reach_aux StateSet.empty dfa.start dfa.transitions (alphabet_list dfa))
+end
+
+module MakeUnsafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
+  (* type letter = Letter.t
+     type state = State.t
+
+     let state_compare = State.compare
+     let letter_compare = Letter.compare
+
+     exception Invalid_DFA of string
+     exception Invalid_letter
+     exception Invalid_state
+
+     module AlphabetSet = Set.Make (Letter)
+     module StateSet = Set.Make (State)
+
+     type t = {
+       states : StateSet.t;
+       alphabet : AlphabetSet.t;
+       start : state;
+       accepting : StateSet.t;
+       transitions : state -> letter -> state;
+     }
+
+     (* Auxilary Functions *)
+
+     let rec step_aux dfa curr word =
+       match word with
+       | [] -> curr
+       | hd :: tail -> step_aux dfa (dfa.transitions curr hd) tail
+
+     let rec reach_aux visited curr transitions alphabet_list =
+       let new_visited = StateSet.add curr visited in
+       List.fold_left
+         (fun v a ->
+           let next_state = transitions curr a in
+           match StateSet.find_opt next_state new_visited with
+           | Some _ -> v
+           | None -> reach_aux v next_state transitions alphabet_list)
+         new_visited alphabet_list
+
+     (* Implementation of interface *)
+
+     let alphabet_list { alphabet; _ } = AlphabetSet.to_list alphabet
+     let state_list { states; _ } = StateSet.to_list states
+     let start { start; _ } = start
+     let accepting_list { accepting; _ } = StateSet.to_list accepting
+     let transitions { transitions; _ } = transitions
+
+     let create_exn ~alphabet ~states ~start ~accepting ~transitions =
+         {
+           states = StateSet.of_list states;
+           alphabet = AlphabetSet.of_list alphabet;
+           start;
+           accepting = StateSet.of_list accepting;
+           transitions = transitions
+         }
+
+     let step dfa ?start word =
+       let start =
+         match start with
+         | None -> dfa.start
+         | Some s -> s
+       in
+       step_aux dfa start word
+
+     let accepts dfa word =
+       let final = step_aux dfa dfa.start word in
+       Option.is_some (StateSet.find_opt final dfa.accepting)
+
+     let negate dfa =
+       { dfa with accepting = StateSet.diff dfa.states dfa.accepting }
+
+     let reachable dfa =
+       StateSet.to_list
+         (reach_aux StateSet.empty dfa.start dfa.transitions (alphabet_list dfa)) *)
+  module T = MakeSafe (Letter) (State)
+  include T
+
+  let create_exn ~alphabet ~states ~start ~accepting ~transitions =
+    {
+      states = StateSet.of_list states;
+      alphabet = AlphabetSet.of_list alphabet;
+      start;
+      accepting = StateSet.of_list accepting;
+      transitions;
+    }
+
+  let step dfa ?start word =
+    let start = match start with None -> dfa.start | Some s -> s in
+    step_aux dfa start word
 end

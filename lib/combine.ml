@@ -19,7 +19,7 @@ module Make (F1 : Sig.F) (F2 : Sig.F with type letter = F1.letter) = struct
       else F1.state_compare s1 ns1
   end
 
-  module F = Dfa.Make (Letter) (New_state)
+  module F = Dfa.MakeUnsafe (Letter) (New_state)
 
   (* Auxilary Functions *)
 

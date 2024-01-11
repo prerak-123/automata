@@ -34,6 +34,7 @@ module type F = sig
   val accepts : t -> letter list -> bool
   val negate : t -> t
   val reachable : t -> state list
+  val minimize : t -> t
   val letter_compare : letter -> letter -> int
   val state_compare : state -> state -> int
 end

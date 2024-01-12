@@ -5,17 +5,15 @@ module type Comparable = sig
   val compare : t -> t -> int
 end
 
-(** Signature of the module obtained from Fsa.Make *)
-module type F = sig
-  type letter
-  type state
-
-  type t
-  (** type of FSA *)
-
-  exception Invalid_DFA of string
+(** Signature of module for DFA *)
+module type DFA = sig
   exception Invalid_letter
   exception Invalid_state
+  exception Invalid_DFA of string
+
+  type letter
+  type state
+  type t
 
   val create_exn :
     alphabet:letter list ->
@@ -25,16 +23,47 @@ module type F = sig
     transitions:(state -> letter -> state) ->
     t
 
+  val letter_compare : letter -> letter -> int
+  val state_compare : state -> state -> int
   val alphabet_list : t -> letter list
   val state_list : t -> state list
   val start : t -> state
   val accepting_list : t -> state list
   val transitions : t -> state -> letter -> state
-  val step : t -> ?start:state -> letter list -> state
   val accepts : t -> letter list -> bool
-  val negate : t -> t
   val reachable : t -> state list
+  val step : t -> ?start:state -> letter list -> state
+  val negate : t -> t
   val minimize : t -> t
-  val letter_compare : letter -> letter -> int
-  val state_compare : state -> state -> int
+end
+
+(** Signature of module for NFA *)
+module type NFA = sig
+  exception Invalid_NFA of string
+  exception Invalid_letter
+  exception Invalid_state
+
+  type letter
+  type state
+  type t
+
+  val create_exn :
+    alphabet:letter list ->
+    states:state list ->
+    start:state list ->
+    accepting:state list ->
+    transitions:(state -> letter -> state list) ->
+    t
+
+  (* val alphabet_list : t -> letter list
+     val state_list : t -> state list
+     val start : t -> state
+     val accepting_list : t -> state list
+     val transitions : t -> state -> letter -> state list
+     val accepts : t -> letter list -> bool
+     val letter_compare : letter -> letter -> int
+     val state_compare : state -> state -> int
+     val reachable : t -> state list
+     val concatenate : t -> t -> t
+     val kleene_closure : t -> state * state -> t *)
 end

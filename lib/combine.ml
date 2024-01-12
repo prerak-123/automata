@@ -1,4 +1,4 @@
-module Make (F1 : Sig.F) (F2 : Sig.F with type letter = F1.letter) = struct
+module Make (F1 : Sig.DFA) (F2 : Sig.DFA with type letter = F1.letter) = struct
   type letter = F1.letter
   type state1 = F1.state
   type state2 = F2.state

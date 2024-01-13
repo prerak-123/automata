@@ -139,8 +139,8 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
             else transitions state letter);
       }
     in
-    if Bool.not (check_states dfa) then raise (Invalid_DFA "Invalid State set")
-    else if Bool.not (check_transitions dfa) then
+    if not (check_states dfa) then raise (Invalid_DFA "Invalid State set")
+    else if not (check_transitions dfa) then
       raise (Invalid_DFA "Invalid Transition Function")
     else dfa
 

@@ -41,7 +41,7 @@ end
 module type NFA = sig
   exception Invalid_NFA of string
   exception Invalid_letter
-  exception Invalid_state
+  exception Invalid_states
 
   type letter
   type state
@@ -55,15 +55,16 @@ module type NFA = sig
     transitions:(state -> letter -> state list) ->
     t
 
-  (* val alphabet_list : t -> letter list
-     val state_list : t -> state list
-     val start : t -> state
-     val accepting_list : t -> state list
-     val transitions : t -> state -> letter -> state list
-     val accepts : t -> letter list -> bool
-     val letter_compare : letter -> letter -> int
-     val state_compare : state -> state -> int
-     val reachable : t -> state list
-     val concatenate : t -> t -> t
-     val kleene_closure : t -> state * state -> t *)
+  val alphabet_list : t -> letter list
+  val state_list : t -> state list
+  val start_list : t -> state list
+  val accepting_list : t -> state list
+  val transitions : t -> state -> letter -> state list
+  val step : t -> ?start:state list -> letter list -> state list
+  val accepts : t -> letter list -> bool
+  (* val letter_compare : letter -> letter -> int
+  val state_compare : state -> state -> int
+  val reachable : t -> state list
+  val concatenate : t -> t -> t
+  val kleene_closure : t -> state * state -> t *)
 end

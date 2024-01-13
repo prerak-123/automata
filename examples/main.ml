@@ -41,9 +41,30 @@
 open Automata
 module NFA_INT = Nfa.MakeSafe (Int) (Int)
 
-let states = [ 0; 1; 2; 3 ]
-let alphabet = [ 0; 1; 2; 3 ] |> Nfa.to_letter
-let start = [ 0; 1 ]
-let accepting = [ 0; 1 ]
-let transitions s _ = [ s ]
-let _ = NFA_INT.create_exn ~states ~alphabet ~start ~accepting ~transitions
+let states = [ 0; 1; 2 ]
+let alphabet = [ 0; 1; 2 ] |> Nfa.to_letter
+let start = [ 0 ]
+let accepting = [ 2 ]
+
+let transitions s letter =
+  let open Nfa in
+  match (s, letter) with
+  | 0, Single 0 -> [ 0 ]
+  | 0, Epsilon -> [ 1 ]
+  | 1, Single 1 -> [ 1 ]
+  | 1, Epsilon -> [ 2 ]
+  | 2, Single 2 -> [ 2 ]
+  | _ -> []
+
+let nfa = NFA_INT.create_exn ~states ~alphabet ~start ~accepting ~transitions
+
+let word = Nfa.to_letter [0;1;1;1;1;1;1;2] 
+let next_states = NFA_INT.step nfa word
+
+let () =
+  let _ = List.map (fun x -> Printf.printf "%d " x) next_states in
+  Printf.printf "\n"
+
+let accepts = NFA_INT.accepts nfa word
+
+let () = Printf.printf "%b\n" accepts;

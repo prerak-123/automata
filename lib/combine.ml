@@ -37,9 +37,7 @@ module Make (F1 : Sig.DFA) (F2 : Sig.DFA with type letter = F1.letter) = struct
   (* Interface Implemantation *)
 
   let combine_and_exn dfa1 dfa2 =
-    if
-      Bool.not
-        (equality_alphabets (F1.alphabet_list dfa1) (F2.alphabet_list dfa2))
+    if not (equality_alphabets (F1.alphabet_list dfa1) (F2.alphabet_list dfa2))
     then raise Alphabets_not_matching
     else
       let new_states =

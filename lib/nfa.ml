@@ -67,10 +67,20 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
     in
     StateSet.for_all check_transitions_of_state nfa.states
 
+  let rec aux_reachable nfa curr_states visited =
+    if StateSet.subset curr_states visited then visited
+    else
+      let new_visited = StateSet.union curr_states visited in
+      AlphabetSet.fold
+        (fun a v ->
+          let next_states = single_step nfa curr_states a in
+          aux_reachable nfa next_states v)
+        nfa.alphabet new_visited
+
   (* Interface Implementation *)
 
   let create_exn ~alphabet ~states ~start ~accepting ~transitions =
-    let alphabet = Epsilon::alphabet in
+    let alphabet = Epsilon :: alphabet in
     let nfa =
       {
         states = StateSet.of_list states;
@@ -81,8 +91,7 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
           (fun state letter ->
             if
               Option.is_none
-                (AlphabetSet.find_opt letter
-                   (AlphabetSet.of_list alphabet))
+                (AlphabetSet.find_opt letter (AlphabetSet.of_list alphabet))
             then raise Invalid_letter
             else transitions state letter);
       }
@@ -112,7 +121,12 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
     |> List.fold_left (single_step nfa) start
     |> StateSet.to_list
 
-  let accepts nfa word = 
-    let final_states = strip_word word |> List.fold_left (single_step nfa) nfa.start in
+  let accepts nfa word =
+    let final_states =
+      strip_word word |> List.fold_left (single_step nfa) nfa.start
+    in
     not (StateSet.is_empty (StateSet.inter final_states nfa.accepting))
+
+  let reachable nfa =
+    aux_reachable nfa nfa.start StateSet.empty |> StateSet.to_list
 end

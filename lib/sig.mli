@@ -62,9 +62,9 @@ module type NFA = sig
   val transitions : t -> state -> letter -> state list
   val step : t -> ?start:state list -> letter list -> state list
   val accepts : t -> letter list -> bool
-  (* val letter_compare : letter -> letter -> int
-  val state_compare : state -> state -> int
   val reachable : t -> state list
-  val concatenate : t -> t -> t
-  val kleene_closure : t -> state * state -> t *)
+  (* val letter_compare : letter -> letter -> int
+     val state_compare : state -> state -> int
+     val concatenate : t -> t -> t
+     val kleene_closure : t -> state * state -> t *)
 end

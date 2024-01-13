@@ -114,5 +114,5 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
 
   let accepts nfa word = 
     let final_states = strip_word word |> List.fold_left (single_step nfa) nfa.start in
-    not (StateSet.is_empty final_states) && not (StateSet.is_empty (StateSet.inter final_states nfa.accepting))
+    not (StateSet.is_empty (StateSet.inter final_states nfa.accepting))
 end

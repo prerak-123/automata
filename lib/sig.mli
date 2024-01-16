@@ -42,6 +42,7 @@ module type NFA = sig
   exception Invalid_NFA of string
   exception Invalid_letter
   exception Invalid_states
+  exception Alphabets_not_equal
 
   type letter
   type state
@@ -63,8 +64,9 @@ module type NFA = sig
   val step : t -> ?start:state list -> letter list -> state list
   val accepts : t -> letter list -> bool
   val reachable : t -> state list
-  (* val letter_compare : letter -> letter -> int
-     val state_compare : state -> state -> int
-     val concatenate : t -> t -> t
-     val kleene_closure : t -> state * state -> t *)
+  val concatenate : t -> t -> t
+  val kleene_closure : t -> state * state -> t
+  (* val reverse : t -> t
+     val letter_compare : letter -> letter -> int
+        val state_compare : state -> state -> int *)
 end

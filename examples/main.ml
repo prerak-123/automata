@@ -41,15 +41,13 @@
 open Automata
 module NFA_INT = Nfa.MakeSafe (Int) (Int)
 
-let states = List.init 1000 Fun.id
+let states = List.init 5 Fun.id
 let alphabet = [ 0; 1; 2 ] |> Nfa.to_letter
 let start = [ 0 ]
-let accepting = [ 2 ]
+let accepting = [ 3 ]
 
-let transitions s l = 
-  match l with 
-  | Nfa.Epsilon -> [s]
-  | Nfa.Single _ -> [(s + 1) mod 101]
+let transitions s l =
+  match l with Nfa.Epsilon -> [ s ] | Nfa.Single _ -> [ (s + 1) mod 5 ]
 
 let nfa = NFA_INT.create_exn ~states ~alphabet ~start ~accepting ~transitions
 let word = Nfa.to_letter [ 0; 1; 1; 1; 1; 1; 1; 2 ]
@@ -67,3 +65,26 @@ let () =
   Printf.printf "Reachable States: ";
   let _ = List.map (fun x -> Printf.printf "%d " x) reachable in
   Printf.printf "\n"
+
+let states = List.init 5 (fun x -> x + 5)
+let start = [ 5 ]
+let accepting = [ 7 ]
+
+let transitions s l =
+  match l with Nfa.Epsilon -> [ s ] | Nfa.Single _ -> [ ((s + 1) mod 5) + 5 ]
+
+let nfa2 = NFA_INT.create_exn ~states ~alphabet ~start ~accepting ~transitions
+let comb = NFA_INT.concatenate nfa nfa2
+let word = word @ ([ 0; 0 ] |> Nfa.to_letter)
+let accepts = NFA_INT.accepts comb word
+let () = Printf.printf "%b\n" accepts
+let nfa3 = NFA_INT.kleene_closure nfa (6, 7)
+let word = List.init 14 (fun _ -> 0)
+let next_states = NFA_INT.step nfa3 (Nfa.to_letter word)
+
+let () =
+  let _ = List.map (fun x -> Printf.printf "%d " x) next_states in
+  Printf.printf "\n"
+
+let accepts = NFA_INT.accepts nfa3 (Nfa.to_letter word)
+let () = Printf.printf "Accepts: %b\n" accepts

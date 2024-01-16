@@ -9,6 +9,7 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
   exception Invalid_NFA of string
   exception Invalid_letter
   exception Invalid_states
+  exception Alphabets_not_equal
 
   type letter = Letter.t nfa_letter
   type state = State.t
@@ -117,16 +118,73 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
             raise Invalid_states
           else start_set
     in
+    let start = epsilon_closure nfa start in
     strip_word word
     |> List.fold_left (single_step nfa) start
     |> StateSet.to_list
 
   let accepts nfa word =
     let final_states =
-      strip_word word |> List.fold_left (single_step nfa) nfa.start
+      strip_word word
+      |> List.fold_left (single_step nfa) (epsilon_closure nfa nfa.start)
     in
     not (StateSet.is_empty (StateSet.inter final_states nfa.accepting))
 
   let reachable nfa =
     aux_reachable nfa nfa.start StateSet.empty |> StateSet.to_list
+
+  let concatenate nfa1 nfa2 =
+    if not (StateSet.inter nfa1.states nfa2.states |> StateSet.is_empty) then
+      raise Invalid_states
+    else if not (AlphabetSet.equal nfa1.alphabet nfa2.alphabet) then
+      raise Alphabets_not_equal
+    else
+      let new_transition state = function
+        | Single _ as x ->
+            if StateSet.find_opt state nfa1.states |> Option.is_some then
+              nfa1.transitions state x
+            else nfa2.transitions state x
+        | Epsilon as x ->
+            if StateSet.find_opt state nfa1.accepting |> Option.is_some then
+              StateSet.to_list nfa2.start @ nfa1.transitions state x
+            else if StateSet.find_opt state nfa1.states |> Option.is_some then
+              nfa1.transitions state x
+            else nfa2.transitions state x
+      in
+      {
+        alphabet = nfa1.alphabet;
+        states = StateSet.union nfa1.states nfa2.states;
+        start = nfa1.start;
+        accepting = nfa2.accepting;
+        transitions = new_transition;
+      }
+
+  let kleene_closure nfa (new_start, new_end) =
+    if
+      Option.is_some (StateSet.find_opt new_start nfa.states)
+      || Option.is_some (StateSet.find_opt new_end nfa.states)
+    then raise Invalid_states
+    else
+      let new_transition state letter =
+        if State.compare state new_start = 0 then
+          match letter with
+          | Epsilon -> StateSet.add new_end nfa.start |> StateSet.to_list
+          | Single _ -> []
+        else if State.compare state new_end = 0 then []
+        else if StateSet.find_opt state nfa.accepting |> Option.is_some then
+          match letter with
+          | Single _ -> nfa.transitions state letter
+          | Epsilon ->
+              nfa.transitions state letter
+              |> StateSet.of_list |> StateSet.union nfa.start
+              |> StateSet.add new_end |> StateSet.to_list
+        else nfa.transitions state letter
+      in
+      {
+        alphabet = nfa.alphabet;
+        states = nfa.states |> StateSet.add new_start |> StateSet.add new_end;
+        start = StateSet.singleton new_start;
+        accepting = StateSet.singleton new_end;
+        transitions = new_transition;
+      }
 end

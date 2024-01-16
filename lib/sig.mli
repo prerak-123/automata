@@ -66,7 +66,7 @@ module type NFA = sig
   val reachable : t -> state list
   val concatenate : t -> t -> t
   val kleene_closure : t -> state * state -> t
-  (* val reverse : t -> t
-     val letter_compare : letter -> letter -> int
-        val state_compare : state -> state -> int *)
+  val reverse : t -> t
+  (* val letter_compare : letter -> letter -> int
+     val state_compare : state -> state -> int *)
 end

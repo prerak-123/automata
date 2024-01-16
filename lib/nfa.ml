@@ -78,6 +78,14 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
           aux_reachable nfa next_states v)
         nfa.alphabet new_visited
 
+  let get_inverse nfa state letter =
+    StateSet.filter
+      (fun x ->
+        nfa.transitions x letter
+        |> List.find_opt (fun s -> State.compare state s = 0)
+        |> Option.is_some)
+      nfa.states
+
   (* Interface Implementation *)
 
   let create_exn ~alphabet ~states ~start ~accepting ~transitions =
@@ -187,4 +195,16 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
         accepting = StateSet.singleton new_end;
         transitions = new_transition;
       }
+
+  let reverse nfa =
+    let new_transition state letter =
+      get_inverse nfa state letter |> StateSet.to_list
+    in
+    {
+      alphabet = nfa.alphabet;
+      states = nfa.states;
+      start = nfa.accepting;
+      accepting = nfa.start;
+      transitions = new_transition;
+    }
 end

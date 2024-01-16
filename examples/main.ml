@@ -88,3 +88,9 @@ let () =
 
 let accepts = NFA_INT.accepts nfa3 (Nfa.to_letter word)
 let () = Printf.printf "Accepts: %b\n" accepts
+
+let nfa4 = NFA_INT.reverse nfa
+let word = List.init 2 (fun _ -> 0)
+let accepts = NFA_INT.accepts nfa4 (Nfa.to_letter word)
+
+let () = Printf.printf "Accepts %b\n" accepts

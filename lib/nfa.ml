@@ -227,11 +227,23 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
       transitions = new_transition;
     }
 
-    let determinise nfa = 
-      let states = subset_states nfa (epsilon_closure nfa nfa.start) SubsetStateSet.empty |> SubsetStateSet.to_list |> List.map (fun x -> StateSet.to_list x) in
-      let start = epsilon_closure nfa nfa.start |> StateSet.to_list in 
-      let accepting = List.filter (fun x -> let s = StateSet.of_list x in StateSet.inter s nfa.accepting |> StateSet.is_empty |> Bool.not) states in
-      let alphabet = AlphabetSet.to_list nfa.alphabet |> from_letter in
-      let transitions s a = single_step nfa (StateSet.of_list s) (Single a) |> StateSet.to_list in 
-      DFA_Subset.create_exn ~alphabet ~states ~start ~accepting ~transitions
+  let determinise nfa =
+    let states =
+      subset_states nfa (epsilon_closure nfa nfa.start) SubsetStateSet.empty
+      |> SubsetStateSet.to_list
+      |> List.map (fun x -> StateSet.to_list x)
+    in
+    let start = epsilon_closure nfa nfa.start |> StateSet.to_list in
+    let accepting =
+      List.filter
+        (fun x ->
+          let s = StateSet.of_list x in
+          StateSet.inter s nfa.accepting |> StateSet.is_empty |> Bool.not)
+        states
+    in
+    let alphabet = AlphabetSet.to_list nfa.alphabet |> from_letter in
+    let transitions s a =
+      single_step nfa (StateSet.of_list s) (Single a) |> StateSet.to_list
+    in
+    DFA_Subset.create_exn ~alphabet ~states ~start ~accepting ~transitions
 end

@@ -117,9 +117,8 @@ let () = Printf.printf "Accepts: %b\n" accepts
 let word = List.init 7 (fun x -> (7 - x) mod m) |> Nfa.to_letter
 let accepts = NFA_INT.accepts nfa4 word
 let () = Printf.printf "Accepts: %b\n" accepts
-
 let dfa = NFA_INT.determinise nfa
-let word = List.init 7 (fun x -> (x + 1) mod m) 
+let word = List.init 7 (fun x -> (x + 1) mod m)
 let accepts = NFA_INT.accepts nfa (Nfa.to_letter word)
 let () = Printf.printf "Accepts: %b\n" accepts
 let accepts = DFA_INT_LIST.accepts dfa word

@@ -11,6 +11,7 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
   exception Invalid_states
   exception Alphabets_not_equal
 
+  type dfa_letter = Letter.t
   type letter = Letter.t nfa_letter
   type state = State.t
 
@@ -25,8 +26,16 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
       | Single c1, Single c2 -> Letter.compare c1 c2
   end
 
+  module SubSetCompare = struct
+    type t = state list
+
+    let compare l1 l2 = List.compare State.compare l1 l2
+  end
+
   module AlphabetSet = Set.Make (LetterCompare)
   module StateSet = Set.Make (State)
+  module SubsetStateSet = Set.Make (StateSet)
+  module DFA_Subset = Dfa.MakeUnsafe (Letter) (SubSetCompare)
 
   type t = {
     states : StateSet.t;
@@ -85,6 +94,16 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
         |> List.find_opt (fun s -> State.compare state s = 0)
         |> Option.is_some)
       nfa.states
+
+  let rec subset_states nfa curr states =
+    if SubsetStateSet.find_opt curr states |> Option.is_some then states
+    else
+      let states = SubsetStateSet.add curr states in
+      AlphabetSet.fold
+        (fun a s ->
+          let ns = single_step nfa curr a in
+          subset_states nfa ns s)
+        nfa.alphabet states
 
   (* Interface Implementation *)
 
@@ -207,4 +226,12 @@ module MakeSafe (Letter : Sig.Comparable) (State : Sig.Comparable) = struct
       accepting = nfa.start;
       transitions = new_transition;
     }
+
+    let determinise nfa = 
+      let states = subset_states nfa (epsilon_closure nfa nfa.start) SubsetStateSet.empty |> SubsetStateSet.to_list |> List.map (fun x -> StateSet.to_list x) in
+      let start = epsilon_closure nfa nfa.start |> StateSet.to_list in 
+      let accepting = List.filter (fun x -> let s = StateSet.of_list x in StateSet.inter s nfa.accepting |> StateSet.is_empty |> Bool.not) states in
+      let alphabet = AlphabetSet.to_list nfa.alphabet |> from_letter in
+      let transitions s a = single_step nfa (StateSet.of_list s) (Single a) |> StateSet.to_list in 
+      DFA_Subset.create_exn ~alphabet ~states ~start ~accepting ~transitions
 end

@@ -40,6 +40,7 @@
 
 open Automata
 module NFA_INT = Nfa.MakeSafe (Int) (Int)
+module DFA_INT_LIST = NFA_INT.DFA_Subset
 
 let states = List.init 5 Fun.id
 let alphabet = [ 0; 1; 2 ] |> Nfa.to_letter
@@ -88,9 +89,38 @@ let () =
 
 let accepts = NFA_INT.accepts nfa3 (Nfa.to_letter word)
 let () = Printf.printf "Accepts: %b\n" accepts
+let n = 170
+let m = 16
+let alphabet = List.init m Fun.id |> Nfa.to_letter
+let states = List.init n Fun.id
+let start = [ 1; 2 ]
+let accepting = [ 72 ]
 
+let transitions s = function
+  | Nfa.Epsilon -> [ s ]
+  | Nfa.Single l -> [ ((s * l) + s + l + 3) mod n ]
+
+let nfa = NFA_INT.create_exn ~alphabet ~states ~start ~accepting ~transitions
+let word = List.init 7 (fun x -> (x + 1) mod m) |> Nfa.to_letter
+let last_states = NFA_INT.step nfa word
+
+let () =
+  Printf.printf "Final States: ";
+  let _ = List.map (fun x -> Printf.printf "%d " x) last_states in
+  Printf.printf "\n"
+
+let accepts = NFA_INT.accepts nfa word
+let () = Printf.printf "Accepts: %b\n" accepts
 let nfa4 = NFA_INT.reverse nfa
-let word = List.init 2 (fun _ -> 0)
-let accepts = NFA_INT.accepts nfa4 (Nfa.to_letter word)
+let accepts = NFA_INT.accepts nfa4 word
+let () = Printf.printf "Accepts: %b\n" accepts
+let word = List.init 7 (fun x -> (7 - x) mod m) |> Nfa.to_letter
+let accepts = NFA_INT.accepts nfa4 word
+let () = Printf.printf "Accepts: %b\n" accepts
 
-let () = Printf.printf "Accepts %b\n" accepts
+let dfa = NFA_INT.determinise nfa
+let word = List.init 7 (fun x -> (x + 1) mod m) 
+let accepts = NFA_INT.accepts nfa (Nfa.to_letter word)
+let () = Printf.printf "Accepts: %b\n" accepts
+let accepts = DFA_INT_LIST.accepts dfa word
+let () = Printf.printf "Accepts: %b\n" accepts

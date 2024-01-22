@@ -44,9 +44,13 @@ module type NFA = sig
   exception Invalid_states
   exception Alphabets_not_equal
 
+  type dfa_letter
   type letter
   type state
   type t
+
+  module DFA_Subset :
+    DFA with type letter = dfa_letter and type state = state list
 
   val create_exn :
     alphabet:letter list ->
@@ -67,6 +71,5 @@ module type NFA = sig
   val concatenate : t -> t -> t
   val kleene_closure : t -> state * state -> t
   val reverse : t -> t
-  (* val letter_compare : letter -> letter -> int
-     val state_compare : state -> state -> int *)
+  val determinise : t -> DFA_Subset.t
 end
